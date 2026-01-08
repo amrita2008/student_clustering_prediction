@@ -16,21 +16,19 @@ discussion = st.slider("Discussion Participation", 0, 100, 10)
 # ---- API CALL ----
 if st.button("Predict Cluster"):
     payload = {
-        "gender": gender,
-        "raisedhands": raisedhands,
-        "visITedResources": visited_resources,
-        "AnnouncementsView": announcements,
-        "Discussion": discussion
-    }
+    "gender": gender,
+    "raisedhands": raisedhands,
+    "VisITedResources": visited_resources,
+    "AnnouncementsView": announcements,
+    "Discussion": discussion
+   }
 
-    try:
-        response = requests.post(
-            "https://YOUR-API.onrender.com/predict",
-            json=payload,
-            timeout=10
-        )
-        result = response.json()
-        st.success(f"🎯 Predicted Cluster: {result['cluster']}")
 
-    except Exception as e:
-        st.error("API not reachable. Try again later.")
+  try:
+    response = requests.post(https://student-clustering-prediction.onrender.com/predict, json=payload, timeout=20)
+    st.write("Status code:", response.status_code)
+    st.write("Raw response:", response.text)
+    result = response.json()
+    st.success(f"🎯 Predicted Cluster: {result['cluster']}")
+except Exception as e:
+    st.error(str(e))
