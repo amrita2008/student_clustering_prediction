@@ -25,7 +25,7 @@ if st.button("Predict Cluster"):
     }
 
     try:
-        response = requests.post(API_URL, json=payload, timeout=20)
+        response = requests.post(API_URL, json=payload, timeout=60)
         response.raise_for_status()
         result = response.json()
         st.success(f" Predicted Cluster: {result['cluster']}")
