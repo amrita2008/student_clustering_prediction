@@ -8,10 +8,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 
 app = FastAPI()
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
 
 MODEL_DIR = "models"
 DATA_FILE = "xAPI-Edu-Data.csv"
@@ -19,22 +15,15 @@ DATA_FILE = "xAPI-Edu-Data.csv"
 scaler = None
 kmeans = None
 features = None
+model_ready = False
 
 
-def train_if_needed():
-    global scaler, kmeans, features
-
-    os.makedirs(MODEL_DIR, exist_ok=True)
-
-    if os.path.exists(f"{MODEL_DIR}/kmeans.pkl"):
-        scaler = pickle.load(open(f"{MODEL_DIR}/scaler.pkl", "rb"))
-        kmeans = pickle.load(open(f"{MODEL_DIR}/kmeans.pkl", "rb"))
-        features = pickle.load(open(f"{MODEL_DIR}/features.pkl", "rb"))
-        return
+def train_model():
+    global scaler, kmeans, features, model_ready
 
     df = pd.read_csv(DATA_FILE)
 
-    # encode categoricals
+    # Encode categorical columns
     for col in df.select_dtypes(include="object").columns:
         df[col] = df[col].astype("category").cat.codes
 
@@ -47,20 +36,42 @@ def train_if_needed():
     kmeans = KMeans(n_clusters=4, random_state=42, n_init=10)
     kmeans.fit(X_scaled)
 
+    os.makedirs(MODEL_DIR, exist_ok=True)
     pickle.dump(scaler, open(f"{MODEL_DIR}/scaler.pkl", "wb"))
     pickle.dump(kmeans, open(f"{MODEL_DIR}/kmeans.pkl", "wb"))
     pickle.dump(features, open(f"{MODEL_DIR}/features.pkl", "wb"))
 
+    model_ready = True
 
-@app.on_event("startup")
-def startup_event():
-    train_if_needed()
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "model_ready": model_ready
+    }
+
+
+@app.post("/train")
+def train():
+    global model_ready
+
+    if model_ready:
+        return {"status": "already trained"}
+
+    train_model()
+    return {"status": "training completed"}
 
 
 @app.post("/predict")
 def predict(student: dict):
-    values = [student[f] for f in features]
+    if not model_ready:
+        return {"error": "Model not trained yet"}
+
+    values = [student.get(f, 0) for f in features]
     arr = np.array(values).reshape(1, -1)
     scaled = scaler.transform(arr)
     cluster = int(kmeans.predict(scaled)[0])
+
     return {"cluster": cluster}
+
