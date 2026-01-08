@@ -8,6 +8,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 
 app = FastAPI()
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 
 MODEL_DIR = "models"
 DATA_FILE = "xAPI-Edu-Data.csv"
