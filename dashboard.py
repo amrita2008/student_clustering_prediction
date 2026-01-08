@@ -22,7 +22,7 @@ if st.button("Predict Cluster"):
     }
 
     try:
-        health = requests.get(f"{API_BASE}/health", timeout=10).json()
+        health = requests.get(f"{API_BASE}/health", timeout=60).json()
 
         if not health["model_ready"]:
             st.warning("Model is training. Please try again in 1 minute.")
